@@ -5,20 +5,22 @@ antes de avanzar. Mejor poco y excelente que mucho a medias.
 
 ---
 
-## Fase 0 — Cimientos (parcialmente hecha)
+## Fase 0 — Cimientos (cerrada)
 
 **Meta:** que el proyecto levante y la arquitectura base esté en pie.
 
 Entregables:
 - [x] Estructura de carpetas y documentación (este repo).
 - [x] Esqueleto que corre con `npm run dev` (escena 3D mínima con un objeto dividido).
-- [ ] Store de zustand inicial (ajustes: audio, reduced-motion, modo).
-- [ ] Sistema de audio para instrucciones (hook + control en UI).
-- [ ] Lógica matemática base en `src/lib/fractions.js` con tests.
-- [ ] Shell de la app con navegación entre actividades (placeholder).
+- [x] Store de zustand inicial (ajustes: audio, reduced-motion, modo).
+- [x] Sistema de audio para instrucciones (hook + control en UI).
+- [x] Lógica matemática base en `src/lib/fractions.js` con tests.
+- [x] Shell de la app con navegación entre actividades (placeholder).
 
 **Listo cuando:** levanta sin errores, hay una escena 3D visible, existe la base de
 `lib/fractions.js` testeada y el shell navega entre pantallas vacías.
+
+**Estado actual:** completada y subida al remoto. El siguiente foco es la Fase 1.
 
 ---
 

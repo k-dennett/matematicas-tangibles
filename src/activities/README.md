@@ -8,3 +8,7 @@ Las actividades son data-driven (ver docs/06-CONTENIDO.md).
   manipulables y representaciones de components/.
 
 Crear una actividad nueva = escribir una definición, no código nuevo.
+
+Estado actual:
+- `fraccion-parte-de-un-todo-01` es la primera actividad conectada.
+- El motor `ActivityRunner.jsx` interpreta la definición y sincroniza las vistas.

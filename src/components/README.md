@@ -10,3 +10,7 @@ Componentes R3F y de UI reutilizables.
 - `ui/` — botones, panel de instrucción, control de audio, etc.
 
 Ver docs/03-ARQUITECTURA.md.
+
+Estado actual:
+- `FractionBar.jsx` es el manipulable 3D activo.
+- `PictorialFraction.jsx` y `SymbolicFraction.jsx` muestran la misma fraccion en vivo.

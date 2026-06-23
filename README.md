@@ -21,9 +21,9 @@ se parte y se compara. El 3D acá no es decorativo: es el corazón pedagógico.
 
 ## Estado
 
-MVP en construcción. Este repositorio contiene la documentación de producto, la
-arquitectura, el roadmap y un **esqueleto que ya corre**, listo para desarrollarse
-con Claude Code.
+MVP en construcción. La **Fase 0 está cerrada**: el repo ya levanta con un shell
+de inicio, navegación básica, audio, estado global y la primera actividad conectada.
+El siguiente foco es la **Fase 1**.
 
 ## Quick start
 
@@ -33,7 +33,7 @@ npm run dev
 ```
 
 Abre la URL que muestra Vite. Deberías ver un shell con pantalla de inicio,
-acceso a la primera actividad y la escena 3D mínima de Fase 0.
+acceso a la primera actividad y la escena 3D de la barra fraccionable.
 
 ```bash
 npm run build      # build de producción (estático)
