@@ -36,6 +36,9 @@ function getBarWidth(partes) {
 function Segment({ x, width, taken, onClick, reducedMotion, index }) {
   const ref = useRef()
   const [hovered, setHovered] = useState(false)
+  const pointerDown = useRef(null)
+  const moved = useRef(false)
+  const allowClick = useRef(false)
   const interactive = typeof onClick === 'function'
   const dense = width < 0.45
   const compact = width < 0.34
@@ -45,6 +48,7 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
   const badgeY = BADGE_Y + (dense ? 0.06 : 0)
   const lane = dense ? index % 2 : 0
   const laneY = badgeY + lane * (dense ? 0.17 : 0)
+  const MOVE_THRESHOLD = 6
 
   useFrame(() => {
     if (!ref.current) return
@@ -65,12 +69,49 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
           interactive
             ? (e) => {
                 e.stopPropagation()
-                onClick()
+                if (!allowClick.current) return
+                allowClick.current = false
+                onClick(e)
               }
             : undefined
         }
+        onPointerDown={
+          interactive
+            ? (e) => {
+                pointerDown.current = { x: e.clientX, y: e.clientY }
+              moved.current = false
+              allowClick.current = false
+            }
+            : undefined
+        }
+        onPointerMove={
+          interactive
+            ? (e) => {
+                const start = pointerDown.current
+                if (!start) return
+                const dx = e.clientX - start.x
+                const dy = e.clientY - start.y
+                if (Math.hypot(dx, dy) > MOVE_THRESHOLD) {
+                  moved.current = true
+                  allowClick.current = false
+                  return
+                }
+                allowClick.current = true
+              }
+            : undefined
+        }
+        onPointerUp={
+          interactive
+            ? () => {
+                allowClick.current = !!pointerDown.current && !moved.current
+                pointerDown.current = null
+              }
+            : undefined
+        }
+        onPointerCancel={interactive ? () => { pointerDown.current = null; moved.current = false; allowClick.current = false } : undefined}
+        onPointerLeave={interactive ? () => { pointerDown.current = null; moved.current = false; allowClick.current = false } : undefined}
         onPointerOver={interactive ? (e) => { e.stopPropagation(); setHovered(true); setCursor('pointer') } : undefined}
-        onPointerOut={interactive ? () => { setHovered(false); setCursor('auto') } : undefined}
+        onPointerOut={interactive ? () => { setHovered(false); setCursor('auto'); pointerDown.current = null; moved.current = false; allowClick.current = false } : undefined}
       >
         <boxGeometry args={[width, BAR_H, BAR_D]} />
         <meshStandardMaterial
