@@ -32,8 +32,8 @@ npm install
 npm run dev
 ```
 
-Abre la URL que muestra Vite. Deberías ver una escena 3D mínima con un objeto
-dividido en fracciones (el esqueleto de Fase 0).
+Abre la URL que muestra Vite. Deberías ver un shell con pantalla de inicio,
+acceso a la primera actividad y la escena 3D mínima de Fase 0.
 
 ```bash
 npm run build      # build de producción (estático)
