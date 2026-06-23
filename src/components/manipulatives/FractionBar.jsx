@@ -30,6 +30,11 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
   const ref = useRef()
   const [hovered, setHovered] = useState(false)
   const interactive = typeof onClick === 'function'
+  const dense = width < 0.38
+  const compact = width < 0.3
+  const badgeSize = dense ? (compact ? 22 : 24) : 32
+  const fontSize = dense ? (compact ? 9 : 10) : 14
+  const badgeY = BADGE_Y + (dense ? 0.05 : 0)
 
   useFrame(() => {
     if (!ref.current) return
@@ -67,23 +72,25 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
         />
       </mesh>
 
-      <Html position={[0, BADGE_Y, 0]} center transform distanceFactor={8} occlude={false}>
+      <Html position={[0, badgeY, 0]} center transform distanceFactor={8} occlude={false}>
         <div
           style={{
-            minWidth: '32px',
-            height: '32px',
-            padding: '0 8px',
-            borderRadius: '999px',
-            border: '2px solid #16233a',
-            background: taken ? '#2e6be6' : '#ffffff',
+            minWidth: `${badgeSize}px`,
+            height: `${badgeSize}px`,
+            padding: dense ? '0 4px' : '0 8px',
+            borderRadius: dense ? '8px' : '999px',
+            border: `${dense ? 1.5 : 2}px solid #16233a`,
+            background: taken ? '#2e6be6' : 'rgba(255,255,255,0.98)',
             color: taken ? '#ffffff' : '#16233a',
             display: 'grid',
             placeItems: 'center',
             fontWeight: 800,
-            fontSize: '14px',
-            boxShadow: '0 6px 18px rgba(22, 35, 58, 0.12)',
+            fontSize: `${fontSize}px`,
+            lineHeight: 1,
+            boxShadow: '0 4px 12px rgba(22, 35, 58, 0.12)',
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
+            backdropFilter: dense ? 'none' : 'blur(4px)',
           }}
         >
           {taken ? '✓' : index + 1}
