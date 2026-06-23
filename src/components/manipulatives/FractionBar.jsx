@@ -10,7 +10,7 @@ import { Html } from '@react-three/drei'
 const PIEZA = '#2e6be6'
 const PIEZA_SUAVE = '#bcd4fb'
 
-const BAR_W = 3.4 // ancho total de la barra
+const BAR_W = 3.4 // ancho total base de la barra
 const BAR_H = 0.6
 const BAR_D = 0.85 // grosor "agarrable" (docs/05)
 const GAP = 0.05 // separación visible entre partes
@@ -23,6 +23,13 @@ function setCursor(value) {
   if (typeof document !== 'undefined') document.body.style.cursor = value
 }
 
+function getBarWidth(partes) {
+  if (partes >= 10) return 5.8
+  if (partes >= 8) return 5.0
+  if (partes >= 6) return 4.2
+  return BAR_W
+}
+
 // Una parte de la barra. Al tomarse sube con una animación con propósito (muestra
 // la acción); al pasar el cursor se asoma un poco para invitar a tocarla. Respeta
 // `prefers-reduced-motion`: si está activo, los cambios son instantáneos.
@@ -30,11 +37,13 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
   const ref = useRef()
   const [hovered, setHovered] = useState(false)
   const interactive = typeof onClick === 'function'
-  const dense = width < 0.38
-  const compact = width < 0.3
+  const dense = width < 0.45
+  const compact = width < 0.34
   const badgeSize = dense ? (compact ? 22 : 24) : 32
   const fontSize = dense ? (compact ? 9 : 10) : 14
   const badgeY = BADGE_Y + (dense ? 0.05 : 0)
+  const lane = dense ? index % 2 : 0
+  const laneY = badgeY + lane * (dense ? 0.18 : 0)
 
   useFrame(() => {
     if (!ref.current) return
@@ -51,7 +60,7 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
   return (
     <group ref={ref} position={[x, 0, 0]}>
       <mesh
-        onPointerDown={
+        onClick={
           interactive
             ? (e) => {
                 e.stopPropagation()
@@ -72,7 +81,7 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
         />
       </mesh>
 
-      <Html position={[0, badgeY, 0]} center transform distanceFactor={8} occlude={false}>
+      <Html position={[0, laneY, 0]} center transform distanceFactor={8} occlude={false}>
         <div
           style={{
             minWidth: `${badgeSize}px`,
@@ -101,16 +110,17 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
 }
 
 export default function FractionBar({ partes = 1, taken = [], onToggleParte, reducedMotion = false }) {
-  const segWidth = (BAR_W - GAP * (partes - 1)) / partes
+  const barW = getBarWidth(partes)
+  const segWidth = (barW - GAP * (partes - 1)) / partes
   return (
     <group>
       <mesh position={[0, -0.41, 0]}>
-        <boxGeometry args={[BAR_W + TRAY_PAD * 2, 0.12, BAR_D + 0.24]} />
+        <boxGeometry args={[barW + TRAY_PAD * 2, 0.12, BAR_D + 0.24]} />
         <meshStandardMaterial color="#e9eef7" roughness={0.95} metalness={0} />
       </mesh>
 
       {Array.from({ length: partes }, (_, i) => {
-        const x = -BAR_W / 2 + segWidth / 2 + i * (segWidth + GAP)
+        const x = -barW / 2 + segWidth / 2 + i * (segWidth + GAP)
         const gapX = x + segWidth / 2 + GAP / 2
         return (
           <group key={i}>
@@ -126,7 +136,14 @@ export default function FractionBar({ partes = 1, taken = [], onToggleParte, red
               taken={taken.includes(i)}
               reducedMotion={reducedMotion}
               index={i}
-              onClick={onToggleParte ? () => onToggleParte(i) : undefined}
+              onClick={
+                onToggleParte
+                  ? (e) => {
+                      e?.stopPropagation?.()
+                      onToggleParte(i)
+                    }
+                  : undefined
+              }
             />
           </group>
         )
