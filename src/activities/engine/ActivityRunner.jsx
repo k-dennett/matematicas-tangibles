@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Bounds, useBounds } from '@react-three/drei'
+import { OrbitControls, Bounds, useBounds, ContactShadows, Sparkles } from '@react-three/drei'
 import FractionBar from '../../components/manipulatives/FractionBar.jsx'
 import PictorialFraction from '../../components/representations/PictorialFraction.jsx'
 import SymbolicFraction from '../../components/representations/SymbolicFraction.jsx'
+import GuideMascot from '../../components/ui/GuideMascot.jsx'
 import SplitControl from '../../components/ui/SplitControl.jsx'
 import PartToggles from '../../components/ui/PartToggles.jsx'
 import InstructionPanel from '../../components/ui/InstructionPanel.jsx'
@@ -75,14 +76,21 @@ export default function ActivityRunner({ definicion }) {
 
   const pistaTrasIntentos = definicion.andamiaje?.pistaTrasIntentos ?? 2
   const mostrarPista = !cumplida && intentos >= pistaTrasIntentos
+  const mood = cumplida ? 'celebra' : taken.length > 0 ? 'animada' : 'idle'
 
   return (
     <div className="activity">
       <div className="activity__stage">
-        <Canvas dpr={[1, 2]} camera={{ position: [0, 1.7, 5], fov: 45 }}>
-          <color attach="background" args={['#f3f6fb']} />
-          <ambientLight intensity={0.75} />
-          <directionalLight position={[3, 6, 4]} intensity={1.1} />
+        <Canvas dpr={[1, 2]} camera={{ position: [0, 1.9, 5.4], fov: 42 }}>
+          <color attach="background" args={['#f7f9ff']} />
+          <fog attach="fog" args={['#f7f9ff', 7, 15]} />
+          <ambientLight intensity={0.95} />
+          <hemisphereLight intensity={0.6} groundColor="#d6e0ef" />
+          <directionalLight position={[4, 7, 5]} intensity={1.2} />
+          <Sparkles count={18} size={2.4} speed={0.25} opacity={0.16} scale={[9, 4, 5]} color="#ff8a3d" />
+          <Sparkles count={10} size={1.8} speed={0.18} opacity={0.12} scale={[6, 3, 4]} color="#2e6be6" />
+          <ContactShadows position={[0, -0.78, 0]} opacity={0.28} scale={10} blur={2.6} far={4.5} />
+          <GuideMascot reducedMotion={reducedMotion} mood={mood} position={[-2.45, 1.25, 0.7]} />
           <Bounds fit clip observe margin={1.25} maxDuration={reducedMotion ? 0.2 : 0.6}>
             <FitToBar partes={partes} />
             <FractionBar
