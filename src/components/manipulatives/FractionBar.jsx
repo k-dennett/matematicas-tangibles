@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { Html } from '@react-three/drei'
 
 // Manipulable 3D: una barra dividida en `partes` iguales. Es DUMB: no sabe de la
 // actividad; recibe el estado ({ partes, taken }) y emite onToggleParte(i) cuando
@@ -15,6 +16,8 @@ const BAR_D = 0.85 // grosor "agarrable" (docs/05)
 const GAP = 0.05 // separación visible entre partes
 const RAISE = 0.26 // cuánto sube una parte "tomada"
 const HOVER = 0.08 // pequeño alzado al pasar el cursor (affordance de "se puede tomar")
+const TRAY_PAD = 0.18
+const BADGE_Y = BAR_H / 2 + 0.3
 
 function setCursor(value) {
   if (typeof document !== 'undefined') document.body.style.cursor = value
@@ -23,7 +26,7 @@ function setCursor(value) {
 // Una parte de la barra. Al tomarse sube con una animación con propósito (muestra
 // la acción); al pasar el cursor se asoma un poco para invitar a tocarla. Respeta
 // `prefers-reduced-motion`: si está activo, los cambios son instantáneos.
-function Segment({ x, width, taken, onClick, reducedMotion }) {
+function Segment({ x, width, taken, onClick, reducedMotion, index }) {
   const ref = useRef()
   const [hovered, setHovered] = useState(false)
   const interactive = typeof onClick === 'function'
@@ -41,16 +44,52 @@ function Segment({ x, width, taken, onClick, reducedMotion }) {
   })
 
   return (
-    <mesh
-      ref={ref}
-      position={[x, 0, 0]}
-      onClick={interactive ? (e) => { e.stopPropagation(); onClick() } : undefined}
-      onPointerOver={interactive ? (e) => { e.stopPropagation(); setHovered(true); setCursor('pointer') } : undefined}
-      onPointerOut={interactive ? () => { setHovered(false); setCursor('auto') } : undefined}
-    >
-      <boxGeometry args={[width, BAR_H, BAR_D]} />
-      <meshStandardMaterial color={taken ? PIEZA : PIEZA_SUAVE} />
-    </mesh>
+    <group ref={ref} position={[x, 0, 0]}>
+      <mesh
+        onPointerDown={
+          interactive
+            ? (e) => {
+                e.stopPropagation()
+                onClick()
+              }
+            : undefined
+        }
+        onPointerOver={interactive ? (e) => { e.stopPropagation(); setHovered(true); setCursor('pointer') } : undefined}
+        onPointerOut={interactive ? () => { setHovered(false); setCursor('auto') } : undefined}
+      >
+        <boxGeometry args={[width, BAR_H, BAR_D]} />
+        <meshStandardMaterial
+          color={taken ? PIEZA : PIEZA_SUAVE}
+          emissive={taken ? PIEZA : '#000000'}
+          emissiveIntensity={taken ? 0.18 : hovered ? 0.04 : 0}
+          roughness={0.65}
+          metalness={0.05}
+        />
+      </mesh>
+
+      <Html position={[0, BADGE_Y, 0]} center transform distanceFactor={8} occlude={false}>
+        <div
+          style={{
+            minWidth: '32px',
+            height: '32px',
+            padding: '0 8px',
+            borderRadius: '999px',
+            border: '2px solid #16233a',
+            background: taken ? '#2e6be6' : '#ffffff',
+            color: taken ? '#ffffff' : '#16233a',
+            display: 'grid',
+            placeItems: 'center',
+            fontWeight: 800,
+            fontSize: '14px',
+            boxShadow: '0 6px 18px rgba(22, 35, 58, 0.12)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {taken ? '✓' : index + 1}
+        </div>
+      </Html>
+    </group>
   )
 }
 
@@ -58,17 +97,31 @@ export default function FractionBar({ partes = 1, taken = [], onToggleParte, red
   const segWidth = (BAR_W - GAP * (partes - 1)) / partes
   return (
     <group>
+      <mesh position={[0, -0.41, 0]}>
+        <boxGeometry args={[BAR_W + TRAY_PAD * 2, 0.12, BAR_D + 0.24]} />
+        <meshStandardMaterial color="#e9eef7" roughness={0.95} metalness={0} />
+      </mesh>
+
       {Array.from({ length: partes }, (_, i) => {
         const x = -BAR_W / 2 + segWidth / 2 + i * (segWidth + GAP)
+        const gapX = x + segWidth / 2 + GAP / 2
         return (
-          <Segment
-            key={i}
-            x={x}
-            width={segWidth}
-            taken={taken.includes(i)}
-            reducedMotion={reducedMotion}
-            onClick={onToggleParte ? () => onToggleParte(i) : undefined}
-          />
+          <group key={i}>
+            {i < partes - 1 && (
+              <mesh position={[gapX, 0, 0]} renderOrder={2}>
+                <boxGeometry args={[GAP * 0.35, BAR_H + 0.08, BAR_D * 0.88]} />
+                <meshStandardMaterial color="#9fb2d1" roughness={1} metalness={0} />
+              </mesh>
+            )}
+            <Segment
+              x={x}
+              width={segWidth}
+              taken={taken.includes(i)}
+              reducedMotion={reducedMotion}
+              index={i}
+              onClick={onToggleParte ? () => onToggleParte(i) : undefined}
+            />
+          </group>
         )
       })}
     </group>
