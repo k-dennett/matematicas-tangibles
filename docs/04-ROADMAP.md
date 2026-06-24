@@ -28,14 +28,18 @@ Entregables:
 
 **OA:** MA04 OA 08, MA04 OA 10. **Es el corazón del MVP.**
 
+**Estado:** En progreso. Iteración actual enfocada en **lúdico visual** sin sacrificar
+pedagogía. La app apunta a ser divertida para 8–12 años manteniendo COPISI riguroso.
+
 Entregables:
-- [~] Manipulable 3D "barra/disco fraccionable": el estudiante elige en cuántas
+- [x] Manipulable 3D "barra fraccionable": el estudiante elige en cuántas
       partes iguales dividir y toma algunas.
       - [x] Lógica de partición y toma de partes funcional.
-      - [x] Interacción drag/rotate/click diferenciada.
-      - [x] Densidad (10+ partes) con layout inteligente de etiquetas.
+      - [x] Interacción drag/rotate/click diferenciada con threshold (6px).
+      - [x] Densidad (10+ partes) con layout inteligente en "carriles" de etiquetas.
       - [x] Visuales lúdicas: caras coloridas, pulso en split, sombras suaves.
-      - [ ] Prueba visual y ajuste fino de animaciones.
+      - [x] Números 3D nítidos (drei Text + outline, no HTML).
+      - [x] Sombra estable (SoftShadowBlob, canvas-based, sin parpadeo).
 - [ ] Las tres representaciones sincronizadas en pantalla: objeto 3D ↔ dibujo
       pictórico ↔ símbolo (`n/d`).
 - [ ] Primera actividad data-driven completa (definición en `activities/definitions/`).
@@ -45,12 +49,13 @@ Entregables:
 **Listo cuando:** un estudiante de 3°–5° puede, sin ayuda para leer, partir el
 objeto, tomar partes y ver/anticipar la fracción correcta. Validado con docentes.
 
-**Cambios recientes:**
-- Reemplazamos ContactShadows (parpadeo) con canvas-based SoftShadowBlob (estable).
-- Caras coloridas en cada segmento (8 colores cíclicos, FRUIT_COLORS palette).
-- Pulso de celebración en split (420ms).
-- Personaje guía (GuideMascot.jsx) que reacciona al progreso.
-- Iluminación mejorada (ambient + hemisphere).
+**Cambios en esta iteración (lúdico):**
+- **GuideMascot.jsx**: Personaje 3D flotante que reacciona a mood (idle → animada → celebra).
+- **SoftShadowBlob**: Canvas-based gradient shadow (reemplaza ContactShadows inestable).
+- **Caras coloridas**: Cada segmento tiene ojos + boca (Face component) con 8 colores (FRUIT_COLORS).
+- **Split-pulse**: Segmentos escalan 1.05 con easing en 420ms cuando se parte la barra.
+- **Lighting mejorada**: Hemispheric + directional para mejor profundidad.
+- **Pointer tracking**: Click vs drag diferenciado; drag-to-rotate no activa selección.
 
 
 ---

@@ -26,11 +26,17 @@ sin caer en lo infantilizante.
 
 ## Identidad visual (propuesta inicial, a validar)
 
-Buscamos algo con personalidad propia, no un template genérico de "app educativa".
-La pista la da el propio tema: **partes, piezas, divisiones, lo que se arma y se
-parte**. Una dirección posible: estética de *bloques y piezas tangibles* —superficies
-limpias, materiales que se sienten "agarrables", colores que distinguen partes con
-claridad. Concretar con el equipo de diseño; lo de abajo es un punto de partida.
+Buscamos algo con **personalidad propia, lúdico sin ser infantilizante**, no un template
+genérico de "app educativa". La pista la da el propio tema: **partes, piezas, divisiones,
+lo que se arma y se parte**. Una dirección posible: estética de *bloques y piezas
+tangibles* —superficies limpias, materiales que se sienten "agarrables", colores que
+distinguen partes con claridad, animaciones que hacen sonreír (caras, pulsos, transformaciones)
+**sin distraer del aprendizaje**. 
+
+**Lúdico ≠ Juego; es amigable y engancha.**
+El objetivo es que el estudiante sienta que la app "tiene personalidad" (el mascota guía,
+los segmentos coloridos con caras, la sombra suave), no que sea un videojuego de fast-paced.
+Cada elemento serve al aprendizaje concreto → pictórico → simbólico.
 
 **Paleta (borrador — 5 colores nombrados):**
 - `--fondo` `#F3F6FB` (fondo claro, descansado, alto contraste con las piezas)
