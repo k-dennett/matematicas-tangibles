@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { CanvasTexture } from 'three'
 
 // Dibujar cara en canvas con estilo profesional
@@ -140,8 +140,9 @@ function drawFaceCanvas(ctx, expr) {
 }
 
 export default function Head2D({ expression = 'idle', taken = false, blink = 1 }) {
-  const canvasRef = useRef()
-  const [texture, setTexture] = useState(null)
+  const canvasRef = useRef(null)
+  const textureRef = useRef(null)
+  const meshRef = useRef(null)
 
   // Mapear expressiones
   const exprMap = {
@@ -151,35 +152,43 @@ export default function Head2D({ expression = 'idle', taken = false, blink = 1 }
     confused: { eyeScale: 1.05, browRot: 0.15, cheekOpacity: 0.2, expression: 'idle' },
   }
 
+  // Crear canvas y textura una sola vez
   useEffect(() => {
     if (!canvasRef.current) {
       canvasRef.current = document.createElement('canvas')
       canvasRef.current.width = 256
       canvasRef.current.height = 256
+      
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d')
+      const expr = { ...exprMap[expression] || exprMap.idle, blink, taken }
+      drawFaceCanvas(ctx, expr)
+      
+      textureRef.current = new CanvasTexture(canvas)
     }
-
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    const expr = { ...exprMap[expression] || exprMap.idle, blink, taken }
-
-    // Dibujar cara
-    drawFaceCanvas(ctx, expr)
-
-    // Crear textura y actualizar estado
-    const newTexture = new CanvasTexture(canvas)
-    setTexture(newTexture)
-
     return () => {
-      newTexture.dispose()
+      if (textureRef.current) {
+        textureRef.current.dispose()
+        textureRef.current = null
+      }
+    }
+  }, [])
+
+  // Actualizar cara en el canvas cuando cambian props
+  useEffect(() => {
+    if (canvasRef.current && textureRef.current) {
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d')
+      const expr = { ...exprMap[expression] || exprMap.idle, blink, taken }
+      drawFaceCanvas(ctx, expr)
+      textureRef.current.needsUpdate = true
     }
   }, [expression, taken, blink])
 
-  if (!texture) return null
-
   return (
-    <mesh position={[0, 0, 0]}>
+    <mesh ref={meshRef} position={[0, 0, 0]}>
       <planeGeometry args={[0.25, 0.25]} />
-      <meshStandardMaterial map={texture} roughness={0.7} metalness={0} />
+      <meshStandardMaterial map={textureRef.current} roughness={0.7} metalness={0} />
     </mesh>
   )
 }
