@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox, Text } from '@react-three/drei'
-import Head3D from './Head3D'
+import Head2D from './Head2D'
 
 // Manipulable 3D: una barra dividida en `partes` iguales. Es DUMB: no sabe de la
 // actividad; recibe el estado ({ partes, taken }) y emite onToggleParte(i) cuando
@@ -40,26 +40,21 @@ function getSegmentTone(index, taken, mood) {
   return base
 }
 
-// Expresiones dinámicas para que los segmentos sean "personajes vivos"
-const EXPRESSIONS = {
-  idle: {},
-  surprise: {},
-  happy: {},
-}
-
 function Face({ mood, taken, compact, width, expression = 'idle', blinkProgress = 1 }) {
   const [blinkPhase, setBlinkPhase] = useState(0)
   
   useEffect(() => {
     const interval = setInterval(() => {
-      setBlinkPhase(p => (p + 0.05) % (Math.PI * 2))
+      setBlinkPhase(p => (p + 0.08) % (Math.PI * 2))
     }, 50)
     return () => clearInterval(interval)
   }, [])
   
+  const blinkVal = Math.max(0.1, Math.sin(blinkPhase) * 0.5 + 0.5)
+  
   return (
     <group position={[0, 0, FACE_Z]}>
-      <Head3D expression={expression} taken={taken} mood={mood} blinkPhase={blinkPhase} />
+      <Head2D expression={expression} taken={taken} blink={blinkVal} />
     </group>
   )
 }
