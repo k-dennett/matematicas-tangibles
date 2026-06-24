@@ -23,7 +23,8 @@ se parte y se compara. El 3D acá no es decorativo: es el corazón pedagógico.
 
 MVP en construcción. La **Fase 0 está cerrada**: el repo ya levanta con un shell
 de inicio, navegación básica, audio, estado global y la primera actividad conectada.
-El siguiente foco es la **Fase 1**.
+La **Fase 1 está en progreso**: implementando el manipulable 3D de barra fraccionable
+con visuales lúdicas (colorido, animaciones, personaje guía) para engachar a niños 8-12.
 
 ## Quick start
 

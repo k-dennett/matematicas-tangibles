@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox, Text } from '@react-three/drei'
 
@@ -18,6 +18,9 @@ const RAISE = 0.26 // cuánto sube una parte "tomada"
 const HOVER = 0.08 // pequeño alzado al pasar el cursor (affordance de "se puede tomar")
 const TRAY_PAD = 0.18
 const BADGE_Y = BAR_H / 2 + 0.3
+const FACE_Z = BAR_D / 2 + 0.04
+const FRUIT_COLORS = ['#ff9f68', '#7ad7ff', '#92e3a9', '#ffd166', '#bda0ff', '#ff8fab', '#6ed3cf', '#ffa94d']
+const FRUIT_SOFT = ['#ffd9bc', '#d7f3ff', '#def8df', '#fff0b8', '#ece3ff', '#ffd6e3', '#d7f7f4', '#ffe2bf']
 
 function setCursor(value) {
   if (typeof document !== 'undefined') document.body.style.cursor = value
@@ -30,10 +33,53 @@ function getBarWidth(partes) {
   return BAR_W
 }
 
+function getSegmentTone(index, taken, mood) {
+  const palette = taken || mood === 'celebra' ? FRUIT_COLORS : FRUIT_SOFT
+  const base = palette[index % palette.length]
+  return base
+}
+
+function Face({ mood, taken, compact, width }) {
+  const eyeSize = compact ? 0.022 : 0.028
+  const eyeOffsetX = compact ? 0.05 : 0.085
+  const eyeY = compact ? 0.015 : 0.03
+  const mouthWidth = compact ? 0.075 : 0.11
+  const mouthY = compact ? -0.04 : -0.02
+  const happy = taken || mood === 'celebra'
+
+  return (
+    <group position={[0, 0.01, FACE_Z]}>
+      <mesh position={[-eyeOffsetX, eyeY, 0]}>
+        <sphereGeometry args={[eyeSize, 12, 12]} />
+        <meshStandardMaterial color="#16233a" roughness={0.45} />
+      </mesh>
+      <mesh position={[eyeOffsetX, eyeY, 0]}>
+        <sphereGeometry args={[eyeSize, 12, 12]} />
+        <meshStandardMaterial color="#16233a" roughness={0.45} />
+      </mesh>
+      <mesh position={[0, mouthY, 0.01]} scale={[1, happy ? 1.15 : 0.9, 1]}>
+        <RoundedBox args={[mouthWidth, 0.018, 0.018]} radius={0.01} smoothness={4}>
+          <meshStandardMaterial color="#16233a" roughness={0.5} />
+        </RoundedBox>
+      </mesh>
+      <mesh position={[0, 0.08, -0.005]}>
+        <sphereGeometry args={[compact ? 0.008 : 0.012, 10, 10]} />
+        <meshStandardMaterial color="#ffffff" transparent opacity={0.7} />
+      </mesh>
+      {width > 0.7 && (
+        <mesh position={[0, 0.11, 0.01]}>
+          <sphereGeometry args={[compact ? 0.012 : 0.016, 12, 12]} />
+          <meshStandardMaterial color="#fff7ef" roughness={0.35} transparent opacity={0.85} />
+        </mesh>
+      )}
+    </group>
+  )
+}
+
 // Una parte de la barra. Al tomarse sube con una animación con propósito (muestra
 // la acción); al pasar el cursor se asoma un poco para invitar a tocarla. Respeta
 // `prefers-reduced-motion`: si está activo, los cambios son instantáneos.
-function Segment({ x, width, taken, onClick, reducedMotion, index }) {
+function Segment({ x, width, taken, onClick, reducedMotion, index, mood, splitPulse }) {
   const ref = useRef()
   const [hovered, setHovered] = useState(false)
   const pointerDown = useRef(null)
@@ -49,16 +95,24 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
   const lane = dense ? index % 2 : 0
   const laneY = badgeY + lane * (dense ? 0.17 : 0)
   const MOVE_THRESHOLD = 6
+  const tone = getSegmentTone(index, taken, mood)
+  const accent = taken || mood === 'celebra' ? PIEZA : '#ffffff'
+  const targetScale = splitPulse ? 1.05 : 1
 
   useFrame(() => {
     if (!ref.current) return
     const lift = interactive && hovered && !taken ? HOVER : 0
     const targetY = (taken ? RAISE : 0) + lift
+    const pulse = splitPulse ? 1.05 : 1
     if (reducedMotion) {
       ref.current.position.y = targetY
+      ref.current.scale.setScalar(pulse)
     } else {
       // Ease exponencial hacia el objetivo: ágil pero suave (no decorativo).
       ref.current.position.y += (targetY - ref.current.position.y) * 0.22
+      ref.current.scale.x += (targetScale - ref.current.scale.x) * 0.16
+      ref.current.scale.y += (targetScale - ref.current.scale.y) * 0.16
+      ref.current.scale.z += (targetScale - ref.current.scale.z) * 0.16
     }
   })
 
@@ -115,20 +169,22 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
       >
         <boxGeometry args={[width, BAR_H, BAR_D]} />
         <meshStandardMaterial
-          color={taken ? PIEZA : PIEZA_SUAVE}
-          emissive={taken ? PIEZA : '#000000'}
-          emissiveIntensity={taken ? 0.18 : hovered ? 0.04 : 0}
-          roughness={0.65}
-          metalness={0.05}
+          color={tone}
+          emissive={accent}
+          emissiveIntensity={taken ? 0.18 : hovered ? 0.07 : mood === 'celebra' ? 0.09 : 0}
+          roughness={0.58}
+          metalness={0.08}
         />
       </mesh>
+
+      <Face mood={mood} taken={taken} compact={compact} width={width} />
 
       <group position={[0, laneY, 0.44]}>
         <RoundedBox args={[badgeWidth, badgeHeight, 0.03]} radius={0.03} smoothness={6}>
           <meshStandardMaterial
             color={taken ? PIEZA : '#ffffff'}
             emissive={taken ? PIEZA : '#000000'}
-            emissiveIntensity={taken ? 0.15 : 0}
+            emissiveIntensity={taken ? 0.16 : 0}
             roughness={0.45}
             metalness={0.02}
           />
@@ -152,14 +208,22 @@ function Segment({ x, width, taken, onClick, reducedMotion, index }) {
   )
 }
 
-export default function FractionBar({ partes = 1, taken = [], onToggleParte, reducedMotion = false }) {
+export default function FractionBar({ partes = 1, taken = [], onToggleParte, reducedMotion = false, mood = 'idle' }) {
   const barW = getBarWidth(partes)
   const segWidth = (barW - GAP * (partes - 1)) / partes
+  const [splitPulse, setSplitPulse] = useState(false)
+
+  useEffect(() => {
+    setSplitPulse(true)
+    const timeout = window.setTimeout(() => setSplitPulse(false), 420)
+    return () => window.clearTimeout(timeout)
+  }, [partes])
+
   return (
     <group>
       <mesh position={[0, -0.41, 0]}>
         <boxGeometry args={[barW + TRAY_PAD * 2, 0.12, BAR_D + 0.24]} />
-        <meshStandardMaterial color="#e9eef7" roughness={0.95} metalness={0} />
+        <meshStandardMaterial color="#dfe8f7" roughness={0.95} metalness={0} />
       </mesh>
 
       {Array.from({ length: partes }, (_, i) => {
@@ -179,6 +243,8 @@ export default function FractionBar({ partes = 1, taken = [], onToggleParte, red
               taken={taken.includes(i)}
               reducedMotion={reducedMotion}
               index={i}
+              mood={mood}
+              splitPulse={splitPulse}
               onClick={
                 onToggleParte
                   ? (e) => {

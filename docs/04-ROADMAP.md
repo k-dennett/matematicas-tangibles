@@ -29,8 +29,13 @@ Entregables:
 **OA:** MA04 OA 08, MA04 OA 10. **Es el corazón del MVP.**
 
 Entregables:
-- [ ] Manipulable 3D "barra/disco fraccionable": el estudiante elige en cuántas
+- [~] Manipulable 3D "barra/disco fraccionable": el estudiante elige en cuántas
       partes iguales dividir y toma algunas.
+      - [x] Lógica de partición y toma de partes funcional.
+      - [x] Interacción drag/rotate/click diferenciada.
+      - [x] Densidad (10+ partes) con layout inteligente de etiquetas.
+      - [x] Visuales lúdicas: caras coloridas, pulso en split, sombras suaves.
+      - [ ] Prueba visual y ajuste fino de animaciones.
 - [ ] Las tres representaciones sincronizadas en pantalla: objeto 3D ↔ dibujo
       pictórico ↔ símbolo (`n/d`).
 - [ ] Primera actividad data-driven completa (definición en `activities/definitions/`).
@@ -39,6 +44,14 @@ Entregables:
 
 **Listo cuando:** un estudiante de 3°–5° puede, sin ayuda para leer, partir el
 objeto, tomar partes y ver/anticipar la fracción correcta. Validado con docentes.
+
+**Cambios recientes:**
+- Reemplazamos ContactShadows (parpadeo) con canvas-based SoftShadowBlob (estable).
+- Caras coloridas en cada segmento (8 colores cíclicos, FRUIT_COLORS palette).
+- Pulso de celebración en split (420ms).
+- Personaje guía (GuideMascot.jsx) que reacciona al progreso.
+- Iluminación mejorada (ambient + hemisphere).
+
 
 ---
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Bounds, useBounds, ContactShadows, Sparkles } from '@react-three/drei'
+import { OrbitControls, Bounds, useBounds, Sparkles } from '@react-three/drei'
+import { CanvasTexture, RepeatWrapping } from 'three'
 import FractionBar from '../../components/manipulatives/FractionBar.jsx'
 import PictorialFraction from '../../components/representations/PictorialFraction.jsx'
 import SymbolicFraction from '../../components/representations/SymbolicFraction.jsx'
@@ -26,6 +27,35 @@ function FitToBar({ partes }) {
     bounds.refresh().clip().fit()
   }, [partes, bounds])
   return null
+}
+
+function SoftShadowBlob({ position = [0, -0.78, 0], scale = [6, 1.6, 1], opacity = 0.2, color = '#12213c' }) {
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 256
+    canvas.height = 128
+    const ctx = canvas.getContext('2d')
+    const gradient = ctx.createRadialGradient(128, 64, 8, 128, 64, 108)
+    gradient.addColorStop(0, 'rgba(0,0,0,0.48)')
+    gradient.addColorStop(0.45, 'rgba(0,0,0,0.18)')
+    gradient.addColorStop(1, 'rgba(0,0,0,0)')
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, 256, 128)
+    const tex = new CanvasTexture(canvas)
+    tex.wrapS = RepeatWrapping
+    tex.wrapT = RepeatWrapping
+    tex.needsUpdate = true
+    return tex
+  }, [])
+
+  useEffect(() => () => texture.dispose(), [texture])
+
+  return (
+    <mesh position={position} rotation={[-Math.PI / 2, 0, 0]} scale={scale}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial map={texture} transparent opacity={opacity} color={color} depthWrite={false} />
+    </mesh>
+  )
 }
 
 export default function ActivityRunner({ definicion }) {
@@ -84,21 +114,23 @@ export default function ActivityRunner({ definicion }) {
         <Canvas dpr={[1, 2]} camera={{ position: [0, 1.9, 5.4], fov: 42 }}>
           <color attach="background" args={['#f7f9ff']} />
           <fog attach="fog" args={['#f7f9ff', 7, 15]} />
-          <ambientLight intensity={0.95} />
-          <hemisphereLight intensity={0.6} groundColor="#d6e0ef" />
-          <directionalLight position={[4, 7, 5]} intensity={1.2} />
-          <Sparkles count={18} size={2.4} speed={0.25} opacity={0.16} scale={[9, 4, 5]} color="#ff8a3d" />
-          <Sparkles count={10} size={1.8} speed={0.18} opacity={0.12} scale={[6, 3, 4]} color="#2e6be6" />
-          <ContactShadows position={[0, -0.78, 0]} opacity={0.28} scale={10} blur={2.6} far={4.5} />
-          <GuideMascot reducedMotion={reducedMotion} mood={mood} position={[-2.45, 1.25, 0.7]} />
-          <Bounds fit clip observe margin={1.25} maxDuration={reducedMotion ? 0.2 : 0.6}>
-            <FitToBar partes={partes} />
-            <FractionBar
-              partes={partes}
-              taken={taken}
+        <ambientLight intensity={0.98} />
+        <hemisphereLight intensity={0.7} groundColor="#d6e0ef" />
+        <directionalLight position={[4, 7, 5]} intensity={1.15} />
+        <SoftShadowBlob position={[-0.1, -0.78, 0.05]} scale={[6.3, 1.7, 1]} opacity={0.16} color="#16233a" />
+        <SoftShadowBlob position={[-2.45, 0.02, 0.7]} scale={[1.9, 1.2, 1]} opacity={0.12} color="#16233a" />
+        <Sparkles count={18} size={2.4} speed={0.25} opacity={0.2} scale={[9, 4, 5]} color="#ff8a3d" />
+        <Sparkles count={10} size={1.8} speed={0.18} opacity={0.16} scale={[6, 3, 4]} color="#2e6be6" />
+        <GuideMascot reducedMotion={reducedMotion} mood={mood} position={[-2.45, 1.25, 0.7]} />
+        <Bounds fit clip observe margin={1.25} maxDuration={reducedMotion ? 0.2 : 0.6}>
+          <FitToBar partes={partes} />
+          <FractionBar
+            partes={partes}
+            taken={taken}
               // Solo se pueden tomar partes una vez que la barra está partida.
               onToggleParte={dividida ? alternarParte : undefined}
               reducedMotion={reducedMotion}
+              mood={mood}
             />
           </Bounds>
           <OrbitControls makeDefault enablePan={false} minDistance={1.5} maxPolarAngle={Math.PI / 2} />
