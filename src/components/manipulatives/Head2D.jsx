@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
-import { CanvasTexture, PlaneGeometry } from 'three'
+import { useEffect, useRef, useState } from 'react'
+import { CanvasTexture } from 'three'
 
 // Dibujar cara en canvas con estilo profesional
 function drawFaceCanvas(ctx, expr) {
   const w = 256
   const h = 256
+  ctx.clearRect(0, 0, w, h)
   ctx.fillStyle = expr.taken ? '#ff9f68' : '#ffd9bc'
   ctx.fillRect(0, 0, w, h)
 
@@ -141,43 +141,45 @@ function drawFaceCanvas(ctx, expr) {
 
 export default function Head2D({ expression = 'idle', taken = false, blink = 1 }) {
   const canvasRef = useRef()
-  const textureRef = useRef()
+  const [texture, setTexture] = useState(null)
 
   // Mapear expressiones
   const exprMap = {
-    idle: { eyeScale: 1, browRot: 0, cheekOpacity: 0.1, blink, expression: 'idle' },
-    surprise: { eyeScale: 1.3, browRot: -0.25, cheekOpacity: 0.2, mouthOpen: 0.8, blink, expression: 'surprise' },
-    happy: { eyeScale: 1.15, browRot: 0.2, cheekOpacity: 0.75, mouthOpen: 0.5, blink, expression: 'happy' },
-    confused: { eyeScale: 1.05, browRot: 0.15, cheekOpacity: 0.2, blink, expression: 'idle' },
+    idle: { eyeScale: 1, browRot: 0, cheekOpacity: 0.1, expression: 'idle' },
+    surprise: { eyeScale: 1.3, browRot: -0.25, cheekOpacity: 0.2, mouthOpen: 0.8, expression: 'surprise' },
+    happy: { eyeScale: 1.15, browRot: 0.2, cheekOpacity: 0.75, mouthOpen: 0.5, expression: 'happy' },
+    confused: { eyeScale: 1.05, browRot: 0.15, cheekOpacity: 0.2, expression: 'idle' },
   }
 
   useEffect(() => {
-    if (!canvasRef.current) return
+    if (!canvasRef.current) {
+      canvasRef.current = document.createElement('canvas')
+      canvasRef.current.width = 256
+      canvasRef.current.height = 256
+    }
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
-    const expr = exprMap[expression] || exprMap.idle
-    expr.taken = taken
+    const expr = { ...exprMap[expression] || exprMap.idle, blink, taken }
 
     // Dibujar cara
     drawFaceCanvas(ctx, expr)
 
-    // Crear textura
-    if (textureRef.current) textureRef.current.dispose()
-    textureRef.current = new CanvasTexture(canvas)
+    // Crear textura y actualizar estado
+    const newTexture = new CanvasTexture(canvas)
+    setTexture(newTexture)
 
     return () => {
-      // Cleanup
+      newTexture.dispose()
     }
   }, [expression, taken, blink])
 
+  if (!texture) return null
+
   return (
-    <>
-      <canvas ref={canvasRef} width={256} height={256} style={{ display: 'none' }} />
-      <mesh position={[0, 0, 0]}>
-        <planeGeometry args={[0.25, 0.25]} />
-        <meshStandardMaterial map={textureRef.current} roughness={0.7} metalness={0} />
-      </mesh>
-    </>
+    <mesh position={[0, 0, 0]}>
+      <planeGeometry args={[0.25, 0.25]} />
+      <meshStandardMaterial map={texture} roughness={0.7} metalness={0} />
+    </mesh>
   )
 }
