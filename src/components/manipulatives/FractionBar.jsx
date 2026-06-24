@@ -39,37 +39,71 @@ function getSegmentTone(index, taken, mood) {
   return base
 }
 
-function Face({ mood, taken, compact, width }) {
+// Expresiones dinámicas para que los segmentos sean "personajes vivos"
+const EXPRESSIONS = {
+  idle: { eyeY: 0, eyeScale: 1, mouthShape: 0, mouthHeight: 0 }, // normal, relajado
+  surprise: { eyeY: 0.02, eyeScale: 1.3, mouthShape: 1, mouthHeight: 0.08 }, // 😮 boca abierta
+  happy: { eyeY: 0, eyeScale: 0.95, mouthShape: 2, mouthHeight: -0.02 }, // 😊 sonrisa feliz
+  confused: { eyeY: 0.01, eyeScale: 1.1, mouthShape: 0, mouthHeight: -0.01 }, // 🤔 confundido
+  thinking: { eyeY: -0.01, eyeScale: 0.85, mouthShape: 0, mouthHeight: -0.03 }, // pensando
+}
+
+function Face({ mood, taken, compact, width, expression = 'idle', blinkProgress = 0 }) {
   const eyeSize = compact ? 0.022 : 0.028
   const eyeOffsetX = compact ? 0.05 : 0.085
-  const eyeY = compact ? 0.015 : 0.03
   const mouthWidth = compact ? 0.075 : 0.11
-  const mouthY = compact ? -0.04 : -0.02
-  const happy = taken || mood === 'celebra'
-
+  const shine = compact ? 0.008 : 0.012
+  
+  const expr = EXPRESSIONS[expression] || EXPRESSIONS.idle
+  
+  // Parpadeo: cierra ojos interpolando escala (0 = cerrado, 1 = abierto)
+  const blinkScale = Math.max(0.1, blinkProgress) // min 0.1 para que no desaparezcan completamente
+  
+  // Boca animada según tipo de expresión
+  let mouthY = expr.eyeY + expr.mouthHeight
+  let mouthOpenness = expr.mouthShape === 1 ? 1 : 0.7 // forma de O vs línea
+  
   return (
     <group position={[0, 0.01, FACE_Z]}>
-      <mesh position={[-eyeOffsetX, eyeY, 0]}>
+      {/* Ojo izquierdo */}
+      <mesh position={[-eyeOffsetX, expr.eyeY, 0]} scale={[expr.eyeScale * blinkScale, expr.eyeScale * blinkScale, 1]}>
         <sphereGeometry args={[eyeSize, 12, 12]} />
         <meshStandardMaterial color="#16233a" roughness={0.45} />
       </mesh>
-      <mesh position={[eyeOffsetX, eyeY, 0]}>
+      
+      {/* Ojo derecho */}
+      <mesh position={[eyeOffsetX, expr.eyeY, 0]} scale={[expr.eyeScale * blinkScale, expr.eyeScale * blinkScale, 1]}>
         <sphereGeometry args={[eyeSize, 12, 12]} />
         <meshStandardMaterial color="#16233a" roughness={0.45} />
       </mesh>
-      <mesh position={[0, mouthY, 0.01]} scale={[1, happy ? 1.15 : 0.9, 1]}>
-        <RoundedBox args={[mouthWidth, 0.018, 0.018]} radius={0.01} smoothness={4}>
-          <meshStandardMaterial color="#16233a" roughness={0.5} />
-        </RoundedBox>
+      
+      {/* Boca animada (cambia forma según expresión) */}
+      {expr.mouthShape === 1 ? (
+        // Boca abierta (sorpresa): óvalo
+        <mesh position={[0, mouthY, 0.01]} scale={[1, mouthOpenness, 1]}>
+          <sphereGeometry args={[mouthWidth * 0.5, 12, 12]} />
+          <meshStandardMaterial color="#e74c3c" roughness={0.6} />
+        </mesh>
+      ) : (
+        // Boca cerrada (feliz, pensando, etc): línea redondeada
+        <mesh position={[0, mouthY, 0.01]} scale={[1, expr.mouthShape === 2 ? 1.2 : 0.9, 1]}>
+          <RoundedBox args={[mouthWidth, 0.018, 0.018]} radius={0.01} smoothness={4}>
+            <meshStandardMaterial color={expr.mouthShape === 2 ? '#ff6b6b' : '#16233a'} roughness={0.5} />
+          </RoundedBox>
+        </mesh>
+      )}
+      
+      {/* Brillo en los ojos */}
+      <mesh position={[0, expr.eyeY + 0.08, -0.005]}>
+        <sphereGeometry args={[shine, 10, 10]} />
+        <meshStandardMaterial color="#ffffff" transparent opacity={0.7 * blinkScale} />
       </mesh>
-      <mesh position={[0, 0.08, -0.005]}>
-        <sphereGeometry args={[compact ? 0.008 : 0.012, 10, 10]} />
-        <meshStandardMaterial color="#ffffff" transparent opacity={0.7} />
-      </mesh>
+      
+      {/* Segundo brillo (solo en segmentos más grandes) */}
       {width > 0.7 && (
-        <mesh position={[0, 0.11, 0.01]}>
+        <mesh position={[0, expr.eyeY + 0.11, 0.01]} scale={[1, 1, 1]}>
           <sphereGeometry args={[compact ? 0.012 : 0.016, 12, 12]} />
-          <meshStandardMaterial color="#fff7ef" roughness={0.35} transparent opacity={0.85} />
+          <meshStandardMaterial color="#fff7ef" roughness={0.35} transparent opacity={0.6 * blinkScale} />
         </mesh>
       )}
     </group>
@@ -85,6 +119,7 @@ function Segment({ x, width, taken, onClick, reducedMotion, index, mood, splitPu
   const pointerDown = useRef(null)
   const moved = useRef(false)
   const allowClick = useRef(false)
+  const [blinkPhase, setBlinkPhase] = useState(0) // 0-1: ciclo de parpadeo
   const interactive = typeof onClick === 'function'
   const dense = width < 0.45
   const compact = width < 0.34
@@ -98,6 +133,35 @@ function Segment({ x, width, taken, onClick, reducedMotion, index, mood, splitPu
   const tone = getSegmentTone(index, taken, mood)
   const accent = taken || mood === 'celebra' ? PIEZA : '#ffffff'
   const targetScale = splitPulse ? 1.05 : 1
+  
+  // Determinar expresión del segmento
+  let expression = 'idle'
+  if (splitPulse) {
+    expression = 'surprise' // 😮 cuando se parte
+  } else if (taken) {
+    expression = 'happy' // 😊 cuando se toma
+  } else if (hovered) {
+    expression = 'confused' // 🤔 cuando se pasa cursor (coqueto)
+  }
+  
+  // Ciclo de parpadeo natural (~1.5s en total: 0.3s cierra, 0.05s cerrado, 0.05s abre, 1.1s abierto)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBlinkPhase(p => (p + 0.016) % 1) // ~60fps, ciclo de 1s normalizado
+    }, 16)
+    return () => clearInterval(interval)
+  }, [])
+  
+  // Convertir fase a progreso de parpadeo (1=abierto, 0=cerrado)
+  const blinkProgressRaw = blinkPhase < 0.2 
+    ? 1 - (blinkPhase / 0.2) * 0.9 // cierra (0.2s)
+    : blinkPhase < 0.25
+    ? 0.1 // cerrado (0.05s)
+    : blinkPhase < 0.3
+    ? 0.1 + ((blinkPhase - 0.25) / 0.05) * 0.9 // abre (0.05s)
+    : 1 // abierto (0.7s)
+  
+  const blinkProgress = taken || splitPulse ? 1 : blinkProgressRaw // sin parpadeo si se toma o en sorpresa
 
   useFrame(() => {
     if (!ref.current) return
@@ -177,7 +241,7 @@ function Segment({ x, width, taken, onClick, reducedMotion, index, mood, splitPu
         />
       </mesh>
 
-      <Face mood={mood} taken={taken} compact={compact} width={width} />
+      <Face mood={mood} taken={taken} compact={compact} width={width} expression={expression} blinkProgress={blinkProgress} />
 
       <group position={[0, laneY, 0.44]}>
         <RoundedBox args={[badgeWidth, badgeHeight, 0.03]} radius={0.03} smoothness={6}>
