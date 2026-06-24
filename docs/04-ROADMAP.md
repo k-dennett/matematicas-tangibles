@@ -52,7 +52,9 @@ objeto, tomar partes y ver/anticipar la fracción correcta. Validado con docente
 **Cambios en esta iteración (lúdico):**
 - **GuideMascot.jsx**: Personaje 3D flotante que reacciona a mood (idle → animada → celebra).
 - **SoftShadowBlob**: Canvas-based gradient shadow (reemplaza ContactShadows inestable).
-- **Caras coloridas**: Cada segmento tiene ojos + boca (Face component) con 8 colores (FRUIT_COLORS).
+- **Segmentos-personaje**: Cada parte de la barra es un mini personaje completo
+  (cuerpo = bloque de fracción, ojos, cejas, boca, brazos y pies), sin perder
+  la lectura de fracción como partes iguales.
 - **Split-pulse**: Segmentos escalan 1.05 con easing en 420ms cuando se parte la barra.
 - **Lighting mejorada**: Hemispheric + directional para mejor profundidad.
 - **Pointer tracking**: Click vs drag diferenciado; drag-to-rotate no activa selección.
