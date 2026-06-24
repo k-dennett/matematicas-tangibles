@@ -41,69 +41,129 @@ function getSegmentTone(index, taken, mood) {
 
 // Expresiones dinámicas para que los segmentos sean "personajes vivos"
 const EXPRESSIONS = {
-  idle: { eyeY: 0, eyeScale: 1, mouthShape: 0, mouthHeight: 0 }, // normal, relajado
-  surprise: { eyeY: 0.02, eyeScale: 1.3, mouthShape: 1, mouthHeight: 0.08 }, // 😮 boca abierta
-  happy: { eyeY: 0, eyeScale: 0.95, mouthShape: 2, mouthHeight: -0.02 }, // 😊 sonrisa feliz
-  confused: { eyeY: 0.01, eyeScale: 1.1, mouthShape: 0, mouthHeight: -0.01 }, // 🤔 confundido
-  thinking: { eyeY: -0.01, eyeScale: 0.85, mouthShape: 0, mouthHeight: -0.03 }, // pensando
+  idle: { eyeY: 0, eyeScale: 1, browY: 0, browScale: 1, mouthShape: 0, mouthHeight: 0, cheekAlpha: 0, pupils: 0 },
+  surprise: { eyeY: 0.025, eyeScale: 1.35, browY: 0.035, browScale: 0.85, mouthShape: 1, mouthHeight: 0.1, cheekAlpha: 0.3, pupils: 0.8 },
+  happy: { eyeY: -0.01, eyeScale: 1.1, browY: -0.015, browScale: 1.15, mouthShape: 2, mouthHeight: -0.03, cheekAlpha: 0.75, pupils: 0.4 },
+  confused: { eyeY: 0.015, eyeScale: 1.05, browY: 0.02, browScale: 1.05, mouthShape: 0, mouthHeight: 0.02, cheekAlpha: 0.2, pupils: 0.5 },
+  thinking: { eyeY: -0.008, eyeScale: 0.9, browY: -0.025, browScale: 0.95, mouthShape: 0, mouthHeight: -0.02, cheekAlpha: 0.1, pupils: -0.2 },
 }
 
-function Face({ mood, taken, compact, width, expression = 'idle', blinkProgress = 0 }) {
-  const eyeSize = compact ? 0.022 : 0.028
-  const eyeOffsetX = compact ? 0.05 : 0.085
-  const mouthWidth = compact ? 0.075 : 0.11
-  const shine = compact ? 0.008 : 0.012
+function Face({ mood, taken, compact, width, expression = 'idle', blinkProgress = 1 }) {
+  const scale = compact ? 0.8 : 1
+  const eyeSize = 0.032 * scale
+  const eyeOffsetX = 0.095 * scale
+  const mouthWidth = 0.125 * scale
+  const browWidth = 0.14 * scale
+  const browHeight = 0.015 * scale
+  const browOffsetX = 0.085 * scale
   
   const expr = EXPRESSIONS[expression] || EXPRESSIONS.idle
   
-  // Parpadeo: cierra ojos interpolando escala (0 = cerrado, 1 = abierto)
-  const blinkScale = Math.max(0.1, blinkProgress) // min 0.1 para que no desaparezcan completamente
-  
-  // Boca animada según tipo de expresión
-  let mouthY = expr.eyeY + expr.mouthHeight
-  let mouthOpenness = expr.mouthShape === 1 ? 1 : 0.7 // forma de O vs línea
+  // Parpadeo: escala Y de los ojos
+  const blinkY = Math.max(0.05, blinkProgress)
   
   return (
-    <group position={[0, 0.01, FACE_Z]}>
-      {/* Ojo izquierdo */}
-      <mesh position={[-eyeOffsetX, expr.eyeY, 0]} scale={[expr.eyeScale * blinkScale, expr.eyeScale * blinkScale, 1]}>
-        <sphereGeometry args={[eyeSize, 12, 12]} />
-        <meshStandardMaterial color="#16233a" roughness={0.45} />
+    <group position={[0, 0.02, FACE_Z]}>
+      {/* === OJOS === */}
+      {/* Blanco del ojo izquierdo */}
+      <mesh position={[-eyeOffsetX, expr.eyeY, 0]} scale={[expr.eyeScale, expr.eyeScale * blinkY, 1]}>
+        <sphereGeometry args={[eyeSize * 0.8, 16, 16]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.4} />
       </mesh>
       
-      {/* Ojo derecho */}
-      <mesh position={[eyeOffsetX, expr.eyeY, 0]} scale={[expr.eyeScale * blinkScale, expr.eyeScale * blinkScale, 1]}>
-        <sphereGeometry args={[eyeSize, 12, 12]} />
-        <meshStandardMaterial color="#16233a" roughness={0.45} />
+      {/* Pupila izquierda */}
+      <mesh position={[-eyeOffsetX, expr.eyeY, 0.005]} scale={[expr.eyeScale * 0.7, expr.eyeScale * blinkY * 0.7, 1]}>
+        <sphereGeometry args={[eyeSize * 0.5, 14, 14]} />
+        <meshStandardMaterial color="#1a1a2e" roughness={0.3} />
       </mesh>
       
-      {/* Boca animada (cambia forma según expresión) */}
-      {expr.mouthShape === 1 ? (
-        // Boca abierta (sorpresa): óvalo
-        <mesh position={[0, mouthY, 0.01]} scale={[1, mouthOpenness, 1]}>
-          <sphereGeometry args={[mouthWidth * 0.5, 12, 12]} />
-          <meshStandardMaterial color="#e74c3c" roughness={0.6} />
+      {/* Brillo izquierdo */}
+      <mesh position={[-eyeOffsetX - 0.01, expr.eyeY + 0.01, 0.01]}>
+        <sphereGeometry args={[eyeSize * 0.25, 12, 12]} />
+        <meshStandardMaterial color="#ffffff" transparent opacity={0.8} roughness={0.2} />
+      </mesh>
+      
+      {/* Blanco del ojo derecho */}
+      <mesh position={[eyeOffsetX, expr.eyeY, 0]} scale={[expr.eyeScale, expr.eyeScale * blinkY, 1]}>
+        <sphereGeometry args={[eyeSize * 0.8, 16, 16]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.4} />
+      </mesh>
+      
+      {/* Pupila derecha */}
+      <mesh position={[eyeOffsetX, expr.eyeY, 0.005]} scale={[expr.eyeScale * 0.7, expr.eyeScale * blinkY * 0.7, 1]}>
+        <sphereGeometry args={[eyeSize * 0.5, 14, 14]} />
+        <meshStandardMaterial color="#1a1a2e" roughness={0.3} />
+      </mesh>
+      
+      {/* Brillo derecho */}
+      <mesh position={[eyeOffsetX + 0.01, expr.eyeY + 0.01, 0.01]}>
+        <sphereGeometry args={[eyeSize * 0.25, 12, 12]} />
+        <meshStandardMaterial color="#ffffff" transparent opacity={0.8} roughness={0.2} />
+      </mesh>
+      
+      {/* === CEJAS === */}
+      {/* Ceja izquierda */}
+      <mesh position={[-browOffsetX, expr.eyeY + 0.06 + expr.browY, 0.005]} scale={[expr.browScale, 1, 1]} rotation={[0, 0, expression === 'confused' ? 0.1 : expression === 'surprise' ? -0.15 : 0]}>
+        <boxGeometry args={[browWidth, browHeight, 0.01]} />
+        <meshStandardMaterial color="#16233a" roughness={0.5} />
+      </mesh>
+      
+      {/* Ceja derecha */}
+      <mesh position={[browOffsetX, expr.eyeY + 0.06 + expr.browY, 0.005]} scale={[expr.browScale, 1, 1]} rotation={[0, 0, expression === 'confused' ? -0.1 : expression === 'surprise' ? 0.15 : 0]}>
+        <boxGeometry args={[browWidth, browHeight, 0.01]} />
+        <meshStandardMaterial color="#16233a" roughness={0.5} />
+      </mesh>
+      
+      {/* === MEJILLAS === */}
+      {/* Mejilla izquierda (aparece con felicidad) */}
+      {expr.cheekAlpha > 0 && (
+        <mesh position={[-eyeOffsetX - 0.055, expr.eyeY - 0.04, 0.001]}>
+          <circleGeometry args={[eyeSize * 0.4, 16]} />
+          <meshStandardMaterial color="#ff9999" transparent opacity={expr.cheekAlpha * 0.6} roughness={0.7} />
         </mesh>
+      )}
+      
+      {/* Mejilla derecha */}
+      {expr.cheekAlpha > 0 && (
+        <mesh position={[eyeOffsetX + 0.055, expr.eyeY - 0.04, 0.001]}>
+          <circleGeometry args={[eyeSize * 0.4, 16]} />
+          <meshStandardMaterial color="#ff9999" transparent opacity={expr.cheekAlpha * 0.6} roughness={0.7} />
+        </mesh>
+      )}
+      
+      {/* === BOCA === */}
+      {expression === 'surprise' ? (
+        // Boca sorprendida: óvalo abierto rojo
+        <mesh position={[0, expr.eyeY + expr.mouthHeight, 0.01]}>
+          <sphereGeometry args={[mouthWidth * 0.45, 16, 16]} />
+          <meshStandardMaterial color="#e74c3c" roughness={0.5} />
+        </mesh>
+      ) : expression === 'happy' ? (
+        // Sonrisa feliz: arco grande y rojo
+        <group position={[0, expr.eyeY + expr.mouthHeight, 0.01]}>
+          <RoundedBox args={[mouthWidth * 1.1, 0.022, 0.015]} radius={0.008} smoothness={4}>
+            <meshStandardMaterial color="#ff6b6b" roughness={0.5} />
+          </RoundedBox>
+          {/* Pequeña lengua debajo */}
+          <mesh position={[0, -0.03, 0.008]}>
+            <sphereGeometry args={[mouthWidth * 0.3, 12, 12]} />
+            <meshStandardMaterial color="#ff9999" roughness={0.6} />
+          </mesh>
+        </group>
       ) : (
-        // Boca cerrada (feliz, pensando, etc): línea redondeada
-        <mesh position={[0, mouthY, 0.01]} scale={[1, expr.mouthShape === 2 ? 1.2 : 0.9, 1]}>
-          <RoundedBox args={[mouthWidth, 0.018, 0.018]} radius={0.01} smoothness={4}>
-            <meshStandardMaterial color={expr.mouthShape === 2 ? '#ff6b6b' : '#16233a'} roughness={0.5} />
+        // Boca normal: línea
+        <mesh position={[0, expr.eyeY + expr.mouthHeight, 0.01]} scale={[1, expr.mouthShape === 0 ? 0.85 : 1, 1]}>
+          <RoundedBox args={[mouthWidth * 0.9, 0.02, 0.015]} radius={0.008} smoothness={4}>
+            <meshStandardMaterial color="#16233a" roughness={0.5} />
           </RoundedBox>
         </mesh>
       )}
       
-      {/* Brillo en los ojos */}
-      <mesh position={[0, expr.eyeY + 0.08, -0.005]}>
-        <sphereGeometry args={[shine, 10, 10]} />
-        <meshStandardMaterial color="#ffffff" transparent opacity={0.7 * blinkScale} />
-      </mesh>
-      
-      {/* Segundo brillo (solo en segmentos más grandes) */}
-      {width > 0.7 && (
-        <mesh position={[0, expr.eyeY + 0.11, 0.01]} scale={[1, 1, 1]}>
-          <sphereGeometry args={[compact ? 0.012 : 0.016, 12, 12]} />
-          <meshStandardMaterial color="#fff7ef" roughness={0.35} transparent opacity={0.6 * blinkScale} />
+      {/* === BARBILLA === */}
+      {expression === 'happy' && (
+        <mesh position={[0, expr.eyeY - 0.075, 0.003]}>
+          <boxGeometry args={[mouthWidth * 0.6, 0.018, 0.01]} />
+          <meshStandardMaterial color="#d4a574" roughness={0.6} />
         </mesh>
       )}
     </group>
