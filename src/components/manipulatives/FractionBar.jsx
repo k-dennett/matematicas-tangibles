@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox, Text } from '@react-three/drei'
+import Head3D from './Head3D'
 
 // Manipulable 3D: una barra dividida en `partes` iguales. Es DUMB: no sabe de la
 // actividad; recibe el estado ({ partes, taken }) y emite onToggleParte(i) cuando
@@ -41,131 +42,24 @@ function getSegmentTone(index, taken, mood) {
 
 // Expresiones dinámicas para que los segmentos sean "personajes vivos"
 const EXPRESSIONS = {
-  idle: { eyeY: 0, eyeScale: 1, browY: 0, browScale: 1, mouthShape: 0, mouthHeight: 0, cheekAlpha: 0, pupils: 0 },
-  surprise: { eyeY: 0.025, eyeScale: 1.35, browY: 0.035, browScale: 0.85, mouthShape: 1, mouthHeight: 0.1, cheekAlpha: 0.3, pupils: 0.8 },
-  happy: { eyeY: -0.01, eyeScale: 1.1, browY: -0.015, browScale: 1.15, mouthShape: 2, mouthHeight: -0.03, cheekAlpha: 0.75, pupils: 0.4 },
-  confused: { eyeY: 0.015, eyeScale: 1.05, browY: 0.02, browScale: 1.05, mouthShape: 0, mouthHeight: 0.02, cheekAlpha: 0.2, pupils: 0.5 },
-  thinking: { eyeY: -0.008, eyeScale: 0.9, browY: -0.025, browScale: 0.95, mouthShape: 0, mouthHeight: -0.02, cheekAlpha: 0.1, pupils: -0.2 },
+  idle: {},
+  surprise: {},
+  happy: {},
 }
 
 function Face({ mood, taken, compact, width, expression = 'idle', blinkProgress = 1 }) {
-  const scale = compact ? 0.8 : 1
-  const eyeSize = 0.032 * scale
-  const eyeOffsetX = 0.095 * scale
-  const mouthWidth = 0.125 * scale
-  const browWidth = 0.14 * scale
-  const browHeight = 0.015 * scale
-  const browOffsetX = 0.085 * scale
+  const [blinkPhase, setBlinkPhase] = useState(0)
   
-  const expr = EXPRESSIONS[expression] || EXPRESSIONS.idle
-  
-  // Parpadeo: escala Y de los ojos
-  const blinkY = Math.max(0.05, blinkProgress)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBlinkPhase(p => (p + 0.05) % (Math.PI * 2))
+    }, 50)
+    return () => clearInterval(interval)
+  }, [])
   
   return (
-    <group position={[0, 0.02, FACE_Z]}>
-      {/* === OJOS === */}
-      {/* Blanco del ojo izquierdo */}
-      <mesh position={[-eyeOffsetX, expr.eyeY, 0]} scale={[expr.eyeScale, expr.eyeScale * blinkY, 1]}>
-        <sphereGeometry args={[eyeSize * 0.8, 16, 16]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.4} />
-      </mesh>
-      
-      {/* Pupila izquierda */}
-      <mesh position={[-eyeOffsetX, expr.eyeY, 0.005]} scale={[expr.eyeScale * 0.7, expr.eyeScale * blinkY * 0.7, 1]}>
-        <sphereGeometry args={[eyeSize * 0.5, 14, 14]} />
-        <meshStandardMaterial color="#1a1a2e" roughness={0.3} />
-      </mesh>
-      
-      {/* Brillo izquierdo */}
-      <mesh position={[-eyeOffsetX - 0.01, expr.eyeY + 0.01, 0.01]}>
-        <sphereGeometry args={[eyeSize * 0.25, 12, 12]} />
-        <meshStandardMaterial color="#ffffff" transparent opacity={0.8} roughness={0.2} />
-      </mesh>
-      
-      {/* Blanco del ojo derecho */}
-      <mesh position={[eyeOffsetX, expr.eyeY, 0]} scale={[expr.eyeScale, expr.eyeScale * blinkY, 1]}>
-        <sphereGeometry args={[eyeSize * 0.8, 16, 16]} />
-        <meshStandardMaterial color="#ffffff" roughness={0.4} />
-      </mesh>
-      
-      {/* Pupila derecha */}
-      <mesh position={[eyeOffsetX, expr.eyeY, 0.005]} scale={[expr.eyeScale * 0.7, expr.eyeScale * blinkY * 0.7, 1]}>
-        <sphereGeometry args={[eyeSize * 0.5, 14, 14]} />
-        <meshStandardMaterial color="#1a1a2e" roughness={0.3} />
-      </mesh>
-      
-      {/* Brillo derecho */}
-      <mesh position={[eyeOffsetX + 0.01, expr.eyeY + 0.01, 0.01]}>
-        <sphereGeometry args={[eyeSize * 0.25, 12, 12]} />
-        <meshStandardMaterial color="#ffffff" transparent opacity={0.8} roughness={0.2} />
-      </mesh>
-      
-      {/* === CEJAS === */}
-      {/* Ceja izquierda */}
-      <mesh position={[-browOffsetX, expr.eyeY + 0.06 + expr.browY, 0.005]} scale={[expr.browScale, 1, 1]} rotation={[0, 0, expression === 'confused' ? 0.1 : expression === 'surprise' ? -0.15 : 0]}>
-        <boxGeometry args={[browWidth, browHeight, 0.01]} />
-        <meshStandardMaterial color="#16233a" roughness={0.5} />
-      </mesh>
-      
-      {/* Ceja derecha */}
-      <mesh position={[browOffsetX, expr.eyeY + 0.06 + expr.browY, 0.005]} scale={[expr.browScale, 1, 1]} rotation={[0, 0, expression === 'confused' ? -0.1 : expression === 'surprise' ? 0.15 : 0]}>
-        <boxGeometry args={[browWidth, browHeight, 0.01]} />
-        <meshStandardMaterial color="#16233a" roughness={0.5} />
-      </mesh>
-      
-      {/* === MEJILLAS === */}
-      {/* Mejilla izquierda (aparece con felicidad) */}
-      {expr.cheekAlpha > 0 && (
-        <mesh position={[-eyeOffsetX - 0.055, expr.eyeY - 0.04, 0.001]}>
-          <circleGeometry args={[eyeSize * 0.4, 16]} />
-          <meshStandardMaterial color="#ff9999" transparent opacity={expr.cheekAlpha * 0.6} roughness={0.7} />
-        </mesh>
-      )}
-      
-      {/* Mejilla derecha */}
-      {expr.cheekAlpha > 0 && (
-        <mesh position={[eyeOffsetX + 0.055, expr.eyeY - 0.04, 0.001]}>
-          <circleGeometry args={[eyeSize * 0.4, 16]} />
-          <meshStandardMaterial color="#ff9999" transparent opacity={expr.cheekAlpha * 0.6} roughness={0.7} />
-        </mesh>
-      )}
-      
-      {/* === BOCA === */}
-      {expression === 'surprise' ? (
-        // Boca sorprendida: óvalo abierto rojo
-        <mesh position={[0, expr.eyeY + expr.mouthHeight, 0.01]}>
-          <sphereGeometry args={[mouthWidth * 0.45, 16, 16]} />
-          <meshStandardMaterial color="#e74c3c" roughness={0.5} />
-        </mesh>
-      ) : expression === 'happy' ? (
-        // Sonrisa feliz: arco grande y rojo
-        <group position={[0, expr.eyeY + expr.mouthHeight, 0.01]}>
-          <RoundedBox args={[mouthWidth * 1.1, 0.022, 0.015]} radius={0.008} smoothness={4}>
-            <meshStandardMaterial color="#ff6b6b" roughness={0.5} />
-          </RoundedBox>
-          {/* Pequeña lengua debajo */}
-          <mesh position={[0, -0.03, 0.008]}>
-            <sphereGeometry args={[mouthWidth * 0.3, 12, 12]} />
-            <meshStandardMaterial color="#ff9999" roughness={0.6} />
-          </mesh>
-        </group>
-      ) : (
-        // Boca normal: línea
-        <mesh position={[0, expr.eyeY + expr.mouthHeight, 0.01]} scale={[1, expr.mouthShape === 0 ? 0.85 : 1, 1]}>
-          <RoundedBox args={[mouthWidth * 0.9, 0.02, 0.015]} radius={0.008} smoothness={4}>
-            <meshStandardMaterial color="#16233a" roughness={0.5} />
-          </RoundedBox>
-        </mesh>
-      )}
-      
-      {/* === BARBILLA === */}
-      {expression === 'happy' && (
-        <mesh position={[0, expr.eyeY - 0.075, 0.003]}>
-          <boxGeometry args={[mouthWidth * 0.6, 0.018, 0.01]} />
-          <meshStandardMaterial color="#d4a574" roughness={0.6} />
-        </mesh>
-      )}
+    <group position={[0, 0, FACE_Z]}>
+      <Head3D expression={expression} taken={taken} mood={mood} blinkPhase={blinkPhase} />
     </group>
   )
 }
